@@ -1,26 +1,26 @@
 // Babel ES6/JSX Compiler
 require('babel-register');
 
-varswig = require('swig');
-varReact = require('react');
-varReactDOM = require('react-dom/server');
-varRouter = require('react-router');
-varroutes = require('./app/routes');
+var swig = require('swig');
+var React = require('react');
+var ReactDOM = require('react-dom/server');
+var Router = require('react-router');
+var routes = require('./app/routes');
 
-varexpress = require('express');
-varpath = require('path');
-varlogger = require('morgan');
-varbodyParser = require('body-parser');
-varmongoose = require('mongoose');
-varCharacter = require('./models/character');
-varconfig = require('./config');
+var express = require('express');
+var path = require('path');
+var logger = require('morgan');
+var bodyParser = require('body-parser');
+var mongoose = require('mongoose');
+var Character = require('./models/character');
+var config = require('./config');
 
-varasync = require('async');
-varrequest = require('request');
-varxml2js = require('xml2js');
-var_ = require('underscore');
+var async = require('async');
+var request = require('request');
+var xml2js = require('xml2js');
+var _ = require('underscore');
 
-varapp = express();
+var app = express();
 
 mongoose.connect(config.database);
 mongoose.connection.on('error', function() {
@@ -39,11 +39,11 @@ app.use(express.static(path.join(__dirname, 'public')));
  * Adds new character to the database
  */
 app.post('/api/characters', function(req, res, next) {
-  vargender = req.body.gender;
-  varcharacterName = req.body.name;
-  varcharacterIdLookupUrl = 'https://api.eveonline.com/eve/CharacterID.xml.aspx?names=' + characterName;
+  var gender = req.body.gender;
+  var characterName = req.body.name;
+  var characterIdLookupUrl = 'https://api.eveonline.com/eve/CharacterID.xml.aspx?names=' + characterName;
 
-  varparser = new xml2js.Parser();
+  var parser = new xml2js.Parser();
 
   async.waterfall([
     function(callback) {
@@ -70,18 +70,18 @@ app.post('/api/characters', function(req, res, next) {
       });
     },
     function(characterId) {
-      varcharacterInfoUrl = 'https://api.eveonline.com/eve/CharacterInfo.xml.aspx?characterID=' + characterId;
+      var characterInfoUrl = 'https://api.eveonline.com/eve/CharacterInfo.xml.aspx?characterID=' + characterId;
 
       request.get({ url: characterInfoUrl }, function(err, request, xml) {
         if (err) return next(err);
         parser.parseString(xml, function(err, parsedXml) {
           if (err) return res.send(err);
           try {
-            varname = parsedXml.eveapi.result[0].characterName[0];
-            varrace = parsedXml.eveapi.result[0].race[0];
-            varbloodline = parsedXml.eveapi.result[0].bloodline[0];
+            var name = parsedXml.eveapi.result[0].characterName[0];
+            var race = parsedXml.eveapi.result[0].race[0];
+            var bloodline = parsedXml.eveapi.result[0].bloodline[0];
 
-            varcharacter = new Character({
+            var character = new Character({
               characterId: characterId,
               name: name,
               race: race,
@@ -108,8 +108,8 @@ app.post('/api/characters', function(req, res, next) {
   * Returns 2 random characters of the same gender that have not been voted yet
 */
 app.get('/api/characters', function(req, res, next) {
-  varchoices = ['Female', 'Male'];
-  varrandomGender = _.sample(choices);
+  var choices = ['Female', 'Male'];
+  var randomGender = _.sample(choices);
 
   Character.find({ random: { $near: [Math.random(), 0] } })
     .where('voted', false)
@@ -122,7 +122,7 @@ app.get('/api/characters', function(req, res, next) {
         return res.send(characters);
       }
 
-      varoppositeGender = _.first(_.without(choices, randomGender));
+      var oppositeGender = _.first(_.without(choices, randomGender));
 
       Character
         .find({ random: { $near: [Math.random(), 0] } })
@@ -149,8 +149,8 @@ app.get('/api/characters', function(req, res, next) {
   * Update winning and losing count for both characters
 */
 app.put('/api/characters', function(req, res, next) {
-  varwinner = req.body.winner;
-  varloser = req.body.loser;
+  var winner = req.body.winner;
+  var loser = req.body.loser;
 
   if (!winner || !loser) {
     return res.status(400).send({ message: 'Voting requires two characters.' });
@@ -175,8 +175,8 @@ app.put('/api/characters', function(req, res, next) {
   function(err, results) {
     if (err) return next(err);
 
-    varwinner = results[0];
-    varloser = results[1];
+    var winner = results[0];
+    var loser = results[1];
 
     if (!winner || !loser) {
       return res.status(404).send({ message: 'One of the characters no longer exists.' });
@@ -227,7 +227,7 @@ app.get('/api/characters/count', function(req, res, next) {
   * Looks up a character by name. (case-insensitive)
 */
 app.get('/api/characters/search', function(req, res, next) {
-  varcharacterName = new RegExp(req.query.name, 'i');
+  var characterName = new RegExp(req.query.name, 'i');
 
   Character.findOne({ name: characterName }, function(err, character) {
     if (err) return next(err);
@@ -245,8 +245,8 @@ app.get('/api/characters/search', function(req, res, next) {
   * Return 100 highest ranked characters. Filter by gender, race and bloodline
 */
 app.get('/api/characters/top', function(req, res, next) {
-  varparams = req.query;
-  varconditions = {};
+  var params = req.query;
+  var conditions = {};
 
   _.each(params, function(value, key) {
     conditions[key] = new RegExp('^' + value + '$', 'i');
@@ -290,7 +290,7 @@ app.get('/api/characters/shame', function(req, res, next) {
  * Returns detailed character information
 */
 app.get('/api/characters/:id', function(req, res, next) {
-  varid = req.params.id;
+  var id = req.params.id;
 
   Character.findOne({ characterId: id }, function(err, character) {
     if (err) return next(err);
@@ -308,7 +308,7 @@ app.get('/api/characters/:id', function(req, res, next) {
  * Reports a character. Character is removed after 4 reports.
 */
 app.post('/api/report', function(req, res, next) {
-  varcharacterId = req.body.characterId;
+  var characterId = req.body.characterId;
 
   Character.findOne({ characterId: characterId }, function(err, character) {
     if (err) return next(err);
@@ -374,7 +374,7 @@ app.get('/api/stats', function(req, res, next) {
     },
     function(callback) {
       Character.aggregate({ $group: { _id: null, total: { $sum: '$wins' } } }, function(err, totalVotes) {
-        vartotal = totalVotes.length ? totalVotes[0].total : 0;
+        var total = totalVotes.length ? totalVotes[0].total : 0;
         callback(err, total);
       }
      );
@@ -388,11 +388,11 @@ app.get('/api/stats', function(req, res, next) {
       .exec(function(err, characters) {
         if (err) return next(err);
 
-        varraceCount = _.countBy(characters, function(character) { return character.race; });
-        varmax = _.max(raceCount, function(race) { return race });
-        varinverted = _.invert(raceCount);
-        vartopRace = inverted[max];
-        vartopCount = raceCount[topRace];
+        var raceCount = _.countBy(characters, function(character) { return character.race; });
+        var max = _.max(raceCount, function(race) { return race });
+        var inverted = _.invert(raceCount);
+        var topRace = inverted[max];
+        var topCount = raceCount[topRace];
 
         callback(err, { race: topRace, count: topCount });
       });
@@ -406,11 +406,11 @@ app.get('/api/stats', function(req, res, next) {
       .exec(function(err, characters) {
         if (err) return next(err);
 
-        varbloodlineCount = _.countBy(characters, function(character) { return character.bloodline; });
-        varmax = _.max(bloodlineCount, function(bloodline) { return bloodline });
-        varinverted = _.invert(bloodlineCount);
-        vartopBloodline = inverted[max];
-        vartopCount = bloodlineCount[topBloodline];
+        var bloodlineCount = _.countBy(characters, function(character) { return character.bloodline; });
+        var max = _.max(bloodlineCount, function(bloodline) { return bloodline });
+        var inverted = _.invert(bloodlineCount);
+        var topBloodline = inverted[max];
+        var topCount = bloodlineCount[topBloodline];
 
         callback(err, { bloodline: topBloodline, count: topCount });
       });
@@ -444,8 +444,8 @@ app.use(function(req, res) {
     } else if (redirectLocation) {
       res.status(302).redirect(redirectLocation.pathname + redirectLocation.search)
     } else if (renderProps) {
-      varhtml = ReactDOM.renderToString(React.createElement(Router.RoutingContext, renderProps));
-      varpage = swig.renderFile('views/index.html', { html: html });
+      var html = ReactDOM.renderToString(React.createElement(Router.RoutingContext, renderProps));
+      var page = swig.renderFile('views/index.html', { html: html });
       res.status(200).send(page);
     } else {
       res.status(404).send('Page Not Found')
@@ -454,9 +454,9 @@ app.use(function(req, res) {
 });
 
 /* Socket.io stuff */
-varserver = require('http').createServer(app);
-vario = require('socket.io')(server);
-varonlineUsers = 0;
+var server = require('http').createServer(app);
+var io = require('socket.io')(server);
+var onlineUsers = 0;
 
 io.sockets.on('connection', function(socket) {
   onlineUsers += 1;
